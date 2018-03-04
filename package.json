@@ -1,0 +1,33 @@
+{
+  "name": "cluster-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "get-started": "npm install -g webpack webpack-cli",
+    "dev": "webpack --mode development"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisbarbour/cluster.git"
+  },
+  "author": "Chris Barbour <bobjamin@live.co.uk>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/chrisbarbour/cluster/issues"
+  },
+  "homepage": "https://github.com/chrisbarbour/cluster#readme",
+  "dependencies": {
+    "@types/react": "^16.0.40",
+    "@types/react-dom": "^16.0.4",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
+  },
+  "devDependencies": {
+    "awesome-typescript-loader": "^3.5.0",
+    "raw-loader": "^0.5.1",
+    "source-map-loader": "^0.2.3",
+    "typescript": "^2.7.2"
+  }
+}
