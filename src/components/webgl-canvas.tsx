@@ -7,14 +7,16 @@ export interface WebGLCanvasProps {
     height: number;
     vertexShaderSource: string;
     fragmentShaderSource: string;
-    objects: GLObject[];
+    objects: Array<any>;
     uniforms: Map<string, any>;
+    update: (time: number) => void;
 }
 
 class WebGLCanvas extends React.Component<WebGLCanvasProps> {
 
     program: GLProgram;
     scene: GLScene;
+    private lastTime: number = 0;
 
     componentDidMount() {
         const canvas = findDOMNode(this) as HTMLCanvasElement;
@@ -34,14 +36,12 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
     }
 
     renderLoop(time: number = 0) {
+        let delta = (time - this.lastTime) * 0.001
+        this.lastTime = time
+        this.props.update(delta)
         this.program.stageProgram();
         this.program.clear(0, 0, 0, 0.1);
         this.scene.render(this.program);
-        this.scene.objects.forEach(
-            (object: GLObject) => {
-                object.transform = object.transform.translate(new Vector2D(0.1,0))
-            }
-        );
         requestAnimationFrame(this.renderLoop.bind(this));
     }
 

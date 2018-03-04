@@ -1,29 +1,22 @@
-import * as React from 'react';
-import WebGLCanvas from './webgl-canvas'
-import { GLPolygon, Vector2D } from 'simple-gl';
-
-const vertexShaderSource = require('../shaders/vertex-shader.glsl');
-const fragmentShaderSource = require('../shaders/fragment-shader.glsl');
+import * as React from 'react'
+import ClusterGl from './cluster-gl'
+import Cluster from '../cluster/cluster'
+import ClusterNode from '../cluster/cluster-node'
+import ClusterLink from '../cluster/cluster-link'
+import { cluster } from './dummy-data'
 
 export default class App extends React.Component<{},{}> {
 
-    uniforms: Map<string, {mapper:(gl: WebGLRenderingContext, position: WebGLUniformLocation, data: any)=>void}> = new Map()
+    cluster: Cluster
 
     componentWillMount(){
-        this.uniforms.set("projectionMatrix", {mapper:(gl:WebGLRenderingContext, position: WebGLUniformLocation, data: any)=> gl.uniformMatrix4fv(position, false, new Float32Array(data))})
+        this.cluster = Cluster.from(cluster)
     }
-
+    
     render(){
 
         return <div>
-            <WebGLCanvas
-            width={1000}
-            height={500}
-            vertexShaderSource={vertexShaderSource}
-            fragmentShaderSource={fragmentShaderSource}
-            uniforms={this.uniforms}
-            objects={[new GLPolygon(6, 2, new Vector2D(0,0))]}
-            />
+            <ClusterGl cluster={this.cluster}/>
         </div>
     }
 }
