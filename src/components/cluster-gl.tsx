@@ -27,8 +27,8 @@ export default class ClusterGl extends Component<ClusterGLProps>{
 
         return <div>
             <WebGLCanvas
-            width={1300}
-            height={1300}
+            width={1000}
+            height={500}
             vertexShaderSource={vertexShaderSource}
             fragmentShaderSource={fragmentShaderSource}
             uniforms={this.uniforms}

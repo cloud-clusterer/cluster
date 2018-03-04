@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { findDOMNode } from 'react-dom';
-import { Vertex, webGlContextFrom, GLObject, GLScene, GLProgram, aspect, Vector2D } from 'simple-gl';
+import { Vertex, Matrix3, webGlContextFrom, GLObject, GLScene, GLProgram, aspect, Vector2D } from 'simple-gl';
 
 export interface WebGLCanvasProps {
     width: number;
@@ -14,9 +14,10 @@ export interface WebGLCanvasProps {
 
 class WebGLCanvas extends React.Component<WebGLCanvasProps> {
 
-    program: GLProgram;
-    scene: GLScene;
-    private lastTime: number = 0;
+    program: GLProgram
+    scene: GLScene
+    private lastTime: number = 0
+    aspectMatrix: Matrix3
 
     componentDidMount() {
         const canvas = findDOMNode(this) as HTMLCanvasElement;
@@ -27,10 +28,8 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
             Vertex.attributeMappings(),
             this.props.uniforms
         );
-        this.program.updateUniform(
-            'projectionMatrix', 
-            aspect(60, this.props.width, this.props.height)
-        );
+        this.aspectMatrix = Matrix3.aspect(60, this.props.width, this.props.height)
+        this.program.updateUniform('projectionMatrix', this.aspectMatrix.matrix4Floats())
         this.scene = new GLScene(this.props.objects);
         this.renderLoop();
     }
@@ -40,7 +39,7 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
         this.lastTime = time
         this.props.update(delta)
         this.program.stageProgram();
-        this.program.clear(0, 0, 0, 0.1);
+        this.program.clear(0, 0, 0, 0.01);
         this.scene.render(this.program);
         requestAnimationFrame(this.renderLoop.bind(this));
     }
