@@ -2,3 +2,4 @@ node_modules
 npm-debug.log
 dist
 src/components/dummy-data.ts
+.DS_Store

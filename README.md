@@ -1,5 +1,9 @@
 # cluster
 
+# Example output
+![Example](./example.png "Example")
+
+
 # Development
 ```bash
 # Open a terminal and run
