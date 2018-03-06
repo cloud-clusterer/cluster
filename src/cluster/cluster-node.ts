@@ -5,10 +5,12 @@ export default class ClusterNode extends GLPolygon{
     name: string
     info: ClusterNodeInfo
     velocity: Vector2D = new Vector2D(0,0)
+    highlight: Boolean = false
 
     constructor(uuid: string, name: string, info: ClusterNodeInfo){
-        super(6,(0.1), new Vector2D(Math.random()*10-5, Math.random()*10-5))
+        super(6,(0.2), new Vector2D(Math.random()*10-5,Math.random()*10-5))
         this.setColor([Math.random(), Math.random(), Math.random(), 1])
+        this.lineColor = [0,1,0,1]
         this.uuid = uuid
         this.name = name
         this.info = info
@@ -18,6 +20,8 @@ export default class ClusterNode extends GLPolygon{
         this.velocity = this.velocity.scale(0.99)
         this.transform = this.transform.translate(this.velocity.scale(time))
     }
+
+    lines(): number[]{ return this.highlight?[1,2,3,4,5,6,7]:[] }
 
     static from(node: any): ClusterNode{
         return new ClusterNode(node.uuid, node.name, ClusterNodeInfo.from(node.info))

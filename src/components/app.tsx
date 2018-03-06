@@ -11,7 +11,7 @@ export default class App extends React.Component<{},{}> {
     cluster: Cluster
 
     componentWillMount(){
-        this.cluster = Cluster.from(cluster, new Vector2D(-10,-10), 20, 20)
+        this.cluster = Cluster.from(cluster, new Vector2D(-30,-30), 60, 60)
     }
     
     render(){

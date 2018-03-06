@@ -21,14 +21,19 @@
   "dependencies": {
     "@types/react": "^16.0.40",
     "@types/react-dom": "^16.0.4",
+    "bootstrap": "^4.0.0",
+    "jquery": "^3.3.1",
+    "popper": "^1.0.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "simple-gl": "^1.0.3"
   },
   "devDependencies": {
     "awesome-typescript-loader": "^3.5.0",
+    "css-loader": "^0.28.10",
     "raw-loader": "^0.5.1",
     "source-map-loader": "^0.2.3",
+    "style-loader": "^0.20.2",
     "ts-loader": "^4.0.1",
     "typescript": "^2.7.2",
     "webpack": "^4.1.0",
