@@ -1,14 +1,14 @@
-import { GLPolygon, Vector2D } from 'simple-gl'
+import { GLPolygon, Vector3D } from 'simple-gl'
 
 export default class ClusterNode extends GLPolygon{
     uuid: string
     name: string
     info: ClusterNodeInfo
-    velocity: Vector2D = new Vector2D(0,0)
+    velocity: Vector3D = new Vector3D(0,0,0)
     highlight: Boolean = false
 
     constructor(uuid: string, name: string, info: ClusterNodeInfo){
-        super(6,(0.2), new Vector2D(Math.random()*10-5,Math.random()*10-5))
+        super(6,(0.2), new Vector3D(Math.random()*10-5,Math.random()*10-5,Math.random()*10-5))
         this.setColor([Math.random(), Math.random(), Math.random(), 1])
         this.lineColor = [0,1,0,1]
         this.uuid = uuid

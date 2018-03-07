@@ -1,4 +1,4 @@
-import { GLLine, Vertex, Vector2D } from 'simple-gl'
+import { GLLine, Vertex, Vector3D } from 'simple-gl'
 import ClusterNode from './cluster-node';
 
 export default class ClusterLink extends GLLine{
@@ -7,7 +7,7 @@ export default class ClusterLink extends GLLine{
     direction: ClusterLinkDirection
     constructor(nodeA: ClusterNode, nodeB: ClusterNode, direction: ClusterLinkDirection = ClusterLinkDirection.NONE){
         
-        super(new Vertex(nodeA.position.translate(new Vector2D(0,0)), [0,0,0,0.2]), new Vertex(nodeB.position.translate(new Vector2D(0,0)), [0,0,0,0.2]))
+        super(new Vertex(nodeA.position.translate(new Vector3D(0,0, 0)), [0,0,0,0.2]), new Vertex(nodeB.position.translate(new Vector3D(0,0,0)), [0,0,0,0.2]))
         this.nodeA = nodeA
         this.nodeB = nodeB
         this.direction = direction
