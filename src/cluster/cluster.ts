@@ -11,8 +11,10 @@ export default class Cluster{
     electrostaticMagnitude: number
     springiness: number
     springLength: number
-    private selectedNode: ClusterNode
+    selectedNode: ClusterNode
+    highlightedNode: ClusterNode
     private lastMouseLocation: Vector2D
+    paused: Boolean = false
 
     constructor(
         nodes: Array<ClusterNode>,
@@ -34,8 +36,16 @@ export default class Cluster{
         this.springLength = springLength
     }
 
+    pause(){
+        this.paused = true
+    }
+
+    play(){
+        this.paused = false
+    }
+
     validateNodes(nodes: Array<ClusterNode>): Array<ClusterNode>{
-        return nodes.filter((node: ClusterNode) =>  !!this.links.find((link:ClusterLink) => link.nodeA == node || link.nodeB == node) )
+        return nodes//.filter((node: ClusterNode) =>  !!this.links.find((link:ClusterLink) => link.nodeA == node || link.nodeB == node) )
     }
 
     onMouseDown(location: Vector2D){
@@ -56,10 +66,13 @@ export default class Cluster{
             this.nodes.forEach((node: ClusterNode) => {
                 let pos = node.transformedPosition()
                 let pos2D = new Vector2D(pos.x, pos.y)
-                node.highlight =pos2D.subtract(location).length() < 0.2
+                if(node.highlight = pos2D.subtract(location).length() < 0.2){
+                    this.highlightedNode = node
+                }
             })
         }
         else{
+            this.selectedNode.velocity = new Vector3D(0,0,0)
             this.selectedNode.transform._translation = new Vector3D(location.x, location.y, this.selectedNode.transform._translation.z)
         }
     }
@@ -85,52 +98,49 @@ export default class Cluster{
 
     update(time: number){
         if(this.selectedNode){
+            this.selectedNode.velocity = new Vector3D(0,0,0)
             this.selectedNode.transform._translation = new Vector3D(this.lastMouseLocation.x, this.lastMouseLocation.y, this.selectedNode.transform._translation.z)
         }
-        let positions = this.nodes.map((node: ClusterNode) => [node, node.transformedPosition()])
-        positions.forEach(([node, position]: [ClusterNode, Vector3D]) => this.clusterGrid.register(node, position))
-        positions.forEach(([nodeA, positionA]: [ClusterNode, Vector3D]) => {
-            let force = new Vector3D(0,0,0)
-            let others = this.clusterGrid.nodesInCellsWith(nodeA)
-            others.forEach((nodeB: ClusterNode) => {
-                let positionB = nodeB.transformedPosition()
-                if(nodeB != nodeA){
-                    let diff = positionA.subtract(positionB)
-                    let distance = diff.length()
-                    let direction = diff.direction(distance)
-                    if(distance > 0.1){
-                        let magnitude = this.electrostaticMagnitude/distance
-                        force = force.translate(direction.scale(magnitude))
+        if(!this.paused){
+            let positions = this.nodes.map((node: ClusterNode) => [node, node.transformedPosition()])
+            positions.forEach(([node, position]: [ClusterNode, Vector3D]) => this.clusterGrid.register(node, position))
+            positions.forEach(([nodeA, positionA]: [ClusterNode, Vector3D]) => {
+                let force = new Vector3D(0,0,0)
+                let others = this.clusterGrid.nodesInCellsWith(nodeA)
+                others.forEach((nodeB: ClusterNode) => {
+                    let positionB = nodeB.transformedPosition()
+                    if(nodeB != nodeA){
+                        let diff = positionA.subtract(positionB)
+                        let distance = diff.length()
+                        let direction = diff.direction(distance)
+                        if(distance > 0.1){
+                            let magnitude = this.electrostaticMagnitude/distance
+                            force = force.translate(direction.scale(magnitude))
+                        }
                     }
-                }
+                })
+                nodeA.velocity = nodeA.velocity.translate(force.scale(time))
             })
-            nodeA.velocity = nodeA.velocity.translate(force.scale(time))
-        })
 
-        this.links.forEach((link: ClusterLink)=> {
-            var difference = link.nodeB.transformedPosition().subtract(link.nodeA.transformedPosition());
-            var diffLength = difference.length();
-            var towardB = difference.direction(diffLength);
-            var comparedToDesired = diffLength - this.springLength;
-            var force = comparedToDesired * this.springiness;
-            var directionalForce = towardB.scale(force);
-            var reverseForce = directionalForce.scale(-1);
-            link.nodeA.velocity = link.nodeA.velocity.translate(directionalForce);
-            link.nodeB.velocity = link.nodeB.velocity.translate(reverseForce);
-        })
+            this.links.forEach((link: ClusterLink)=> {
+                var difference = link.nodeB.transformedPosition().subtract(link.nodeA.transformedPosition());
+                var diffLength = difference.length();
+                var towardB = difference.direction(diffLength);
+                var comparedToDesired = diffLength - this.springLength;
+                var force = comparedToDesired * this.springiness;
+                var directionalForce = towardB.scale(force);
+                var reverseForce = directionalForce.scale(-1);
+                link.nodeA.velocity = link.nodeA.velocity.translate(directionalForce);
+                link.nodeB.velocity = link.nodeB.velocity.translate(reverseForce);
+            })
 
-        this.nodes.forEach((node: ClusterNode) => node.update(time))
+            this.nodes.forEach((node: ClusterNode) => node.update(time))
+        }
     }
 
     static from(cluster: any, topLeft: Vector2D, width: number, height: number): Cluster{
         let nodes = cluster.nodes.map((node: any) => ClusterNode.from(node)).filter(
-            (node: ClusterNode) =>( 
-                node.info.type == "AWS::Lambda::Function" ||
-                node.info.type == "AWS::SNS::Topic" ||
-                node.info.type == "AWS::SQS::Queue" ||
-                node.info.type == "AWS::IAM::Role" ||
-                node.info.type.indexOf("AWS::ApiGateway::") != -1
-            ) && node.name.indexOf('Error') == -1 && node.name.indexOf('scope') == -1
+            (node: ClusterNode) => true
         )
         let links = cluster.links.filter(
             (link: {uuidA: string, uuidB: string, direction: ClusterLinkDirection}) => {

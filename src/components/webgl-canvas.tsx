@@ -38,9 +38,10 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
     }
 
     updateView(){
+        var h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
         const canvas = findDOMNode(this) as HTMLCanvasElement;
         canvas.width = canvas.parentElement.clientWidth
-        canvas.height = canvas.parentElement.clientHeight
+        canvas.height = h-10
         this.aspectMatrix = Matrix3.scale(new Vector2D(this.props.scale, this.props.scale)).multiply(Matrix3.aspect(1.2, canvas.width, canvas.height))
         this.program.updateUniform('projectionMatrix', this.aspectMatrix.matrix4Floats())
         this.inverseView = this.aspectMatrix.inverse()
@@ -48,7 +49,7 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
 
     mouseLocationFrom(event: MouseEvent): Vector2D{
         const canvas = findDOMNode(this) as HTMLCanvasElement;
-        let cursor = new Vector2D(((2*event.clientX+30)/canvas.width)-1, -((2*event.clientY/canvas.height)-1))
+        let cursor = new Vector2D(((2*event.clientX)/canvas.width)-1, -(((2*event.clientY)/canvas.height)-1))
         return this.inverseView.transform(cursor)
     }
 
@@ -77,10 +78,11 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
         requestAnimationFrame(this.renderLoop.bind(this));
     }
 
-    render() { return <canvas 
-        onMouseMove={this.onMouseMove.bind(this)}
-        onMouseDown={this.onMouseDown.bind(this)}
-        onMouseUp={this.onMouseUp.bind(this)}
+    render() { 
+        return <canvas
+            onMouseMove={this.onMouseMove.bind(this)}
+            onMouseDown={this.onMouseDown.bind(this)}
+            onMouseUp={this.onMouseUp.bind(this)}
         />; }
 }
 

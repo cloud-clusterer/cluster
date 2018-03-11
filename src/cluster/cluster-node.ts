@@ -8,7 +8,7 @@ export default class ClusterNode extends GLPolygon{
     highlight: Boolean = false
 
     constructor(uuid: string, name: string, info: ClusterNodeInfo){
-        super(6,(0.2), new Vector3D(Math.random()*10-5,Math.random()*10-5,Math.random()*10-5))
+        super(6,(0.2), new Vector3D(Math.random()*10-5,Math.random()*10-5,0))
         this.setColor([Math.random(), Math.random(), Math.random(), 1])
         this.lineColor = [0,1,0,1]
         this.uuid = uuid
