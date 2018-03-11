@@ -29,15 +29,6 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         }
     }
 
-    sliderChanged(event: any){
-        let slider = event.target
-        this.setState({scale: slider.value/100})
-    }
-    slider2Changed(event: any){
-        let slider = event.target
-        this.props.cluster.springiness = slider.value/1000
-    }
-
     onMouseDown(location: Vector2D){
         this.props.cluster.onMouseDown(location)
     }
@@ -54,11 +45,15 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         let node = this.state.selectedNode
         if(node){
             let otherProperties = Object.keys(node.info.otherProperties).map(
-                (key: string) => <div>{`${key}: ${node.info.otherProperties[key]}`}</div>
+                (key: string) => <div className="row"><div className="col-3">{`${key}:`}</div><div className="col-9">{`${node.info.otherProperties[key]}`}</div></div>
             )
             return <div>
-                <div>{node.name}</div>
-                <div>{node.info.type}</div>
+                <h2 style={{textAlign: 'center'}}>{node.info.title}</h2>
+                <div className="row">
+                    <div className="col-3">Name:</div><div className="col-9">{node.name}</div>
+                    <div className="col-3">Type:</div><div className="col-9">{node.info.type}</div>
+                </div>
+                <h4 style={{textAlign: 'center', marginTop: '0.5em'}}> Properties </h4>
                 {otherProperties}
             </div>
         }
@@ -83,9 +78,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
                     />
                 </div>
                 <div className="col-3">
-                    <input type="range" min="1" max="25" className="slider" onChange={this.sliderChanged.bind(this)}/>
-                    <input type="range" min="1" max="25" className="slider" onChange={this.slider2Changed.bind(this)}/>
-                    { this.nodeInfo() }
+                   { this.nodeInfo() }
                 </div>
         </div>
     }
