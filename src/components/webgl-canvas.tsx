@@ -18,19 +18,20 @@ export interface WebGLCanvasProps {
 class WebGLCanvas extends React.Component<WebGLCanvasProps> {
     programs: Map<string,GLProgram>
     private lastTime: number = 0
-    private scale: number = 0.5
     aspectMatrix: Matrix3
     inverseView: Matrix3
+    context2D: CanvasRenderingContext2D
 
     componentDidMount() {
         const canvas = findDOMNode(this) as HTMLCanvasElement;
         let programs = new Map<string, GLProgram>();
+        let webglContext = webGlContextFrom(canvas)
         this.props.programs.forEach(
             (value, key) => {
                 programs.set(
                     key,
                     new GLProgram(
-                        webGlContextFrom(canvas),
+                        webglContext,
                         value.vertexShaderSource,
                         value.fragmentShaderSource, 
                         Vertex.attributeMappings(),
@@ -39,6 +40,7 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
                 )
             }
         );
+        this.context2D = canvas.getContext('2d');
         this.programs = programs;
         this.renderLoop();
     }

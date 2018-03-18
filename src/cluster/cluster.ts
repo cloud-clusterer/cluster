@@ -7,6 +7,7 @@ import { Vector3D, Vector2D } from 'simple-gl'
 export default class Cluster{
     nodes: Array<ClusterNode>
     links: Array<ClusterLink>
+    types: Map<string, {color:{r:number, g:number, b:number, a:number}}>
     clusterGrid: ClusterGrid<ClusterNode>
     electrostaticMagnitude: number
     springiness: number
@@ -22,13 +23,13 @@ export default class Cluster{
         topLeft: Vector2D,
         width: number,
         height: number,
-        electrostaticMagnitude: number = 0.05,
+        electrostaticMagnitude: number = 0.5,
         springiness: number = 0.01,
         springLength: number = 1.5
     ){
         this.nodes = nodes
         this.links = links
-        this.colorNodes()
+        this.types = this.colorNodes()
         this.nodes = this.validateNodes(this.nodes)
         this.clusterGrid = new ClusterGrid<ClusterNode>(topLeft, width, height, 30, 30)
         this.electrostaticMagnitude = electrostaticMagnitude
@@ -77,15 +78,20 @@ export default class Cluster{
         }
     }
 
-    colorNodes(){
+    colorNodes(): Map<string, {color:{r:number, g:number, b:number, a:number}}>{
         let nodeTypes = new Set<string>()
         this.nodes.forEach((node: ClusterNode) => nodeTypes.add(node.info.type))
-        let colors = new Map<string, number[]>()
+        let colors = new Map<string, {color:{r:number, g:number, b:number, a:number}}>()
         nodeTypes.forEach((nodeType: string) => {
-            colors.set(nodeType, [Math.random(),Math.random(),Math.random(),1] )
+            colors.set(nodeType, {color:{r:Math.random(),g: Math.random(), b:Math.random(), a:1}} )
         })
         let num = 0
-        this.nodes.forEach((node: ClusterNode) => node.setColor(colors.get(node.info.type)))
+        this.nodes.forEach((node: ClusterNode) => {
+                let color = colors.get(node.info.type)
+                node.setColor([color.color.r, color.color.g, color.color.b, color.color.a])
+            }
+        )
+        return colors
     }
 
     static find(nodes: Array<ClusterNode>, uuid: string): ClusterNode | undefined {
@@ -138,9 +144,15 @@ export default class Cluster{
         }
     }
 
+    static countRelationships(uuid: string, links:{uuidA: string, uuidB: string}[]): number{
+       return links.filter((link) => link.uuidA == uuid || link.uuidB == uuid).length
+    }
+
     static from(cluster: any, topLeft: Vector2D, width: number, height: number): Cluster{
         let nodes = cluster.nodes.map((node: any) => ClusterNode.from(node)).filter(
-            (node: ClusterNode) => true
+            (node: ClusterNode) => {
+                return this.countRelationships(node.uuid, cluster.links) < 10
+            }
         )
         let links = cluster.links.filter(
             (link: {uuidA: string, uuidB: string, direction: ClusterLinkDirection}) => {

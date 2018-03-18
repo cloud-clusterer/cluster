@@ -15,10 +15,9 @@ export interface ClusterGLProps{
 export default class ClusterGl extends Component<ClusterGLProps,{scale: number, selectedNode: ClusterNode}>{
 
     programs: Map<string, {vertexShaderSource: string, fragmentShaderSource: string, uniforms:Map<string, any>}>
-    nodes: Array<GLObject>
-    links: Array<GLObject>
+
     componentWillMount(){
-        this.setState({scale: 0.1})
+        this.setState({scale: 0.05})
         let uniforms = new Map<string, any>()
         uniforms.set("projectionMatrix", {mapper:(gl:WebGLRenderingContext, position: WebGLUniformLocation, data: any)=> gl.uniformMatrix4fv(position, false, new Float32Array(data))})
         uniforms.set("cursor_location", {mapper: (gl:WebGLRenderingContext, position: WebGLUniformLocation, data: any)=>gl.uniform2fv(position, new Float32Array(data))})
@@ -29,8 +28,6 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
             uniforms: uniforms
         });
         this.programs = programs
-        this.nodes = [this.props.cluster.nodes[0]]
-        this.links = this.props.cluster.links
     }
 
     viewUpdated(programs: Map<string, GLProgram>, view: Matrix3){
@@ -39,7 +36,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
 
     scenes(): Map<string, GLScene>{
         let scenes = new Map<string, GLScene>()
-        scenes.set("cluster", new GLScene([...this.links, ...this.nodes]))
+        scenes.set("cluster", new GLScene([...this.props.cluster.links, ...this.props.cluster.nodes]))
         return scenes
     }
 
@@ -49,20 +46,13 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         ]
     }
 
-    current: number = 0
-
     update(time: number){
-        if(this.nodes.length<this.props.cluster.nodes.length && this.current>1){
-            this.nodes.push(this.props.cluster.nodes[this.nodes.length])
-            this.current = 0
-        }
-        this.current += time;
         this.props.cluster.update(time)
         if(this.props.cluster.highlightedNode && this.props.cluster.highlightedNode != this.state.selectedNode){
             this.setState({selectedNode: this.props.cluster.highlightedNode})
         }
         else{
-            this.setState({})
+           // this.setState({})
         }
     }
 
@@ -86,7 +76,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
             )
             return <div>
                 <h2 style={{textAlign: 'center'}}>{node.info.title}</h2>
-                <div className="row">
+                <div className="row" style={{overflowWrap: 'break-word'}}>
                     <div className="col-3">Name:</div><div className="col-9">{node.name}</div>
                     <div className="col-3">Type:</div><div className="col-9">{node.info.type}</div>
                 </div>
@@ -97,9 +87,33 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         return <p></p>
     }
 
+    legend(){
+        let svgWidth = 300;
+        let svgHeight = 30*(this.props.cluster.types.size+1);
+        let circles:JSX.Element[] = []
+        let names: JSX.Element[] = []
+        let currentPos = 0
+        this.props.cluster.types.forEach((value, key) => {
+            circles.push(
+                <circle cx={svgWidth-30} cy={currentPos*30 + 30} r={10} fill={`rgb(${Math.floor(value.color.r*255)}, ${Math.floor(value.color.g*255)}, ${Math.floor(value.color.b*255)})`}/>
+            )
+            names.push(<li><p style={{marginBottom:'6px'}}>{key}</p></li>);
+            currentPos ++
+        })
+        return<div>
+             <svg style={{position:'absolute', right:'0', bottom:'0', width:(svgWidth + 'px'), height:(svgHeight + 'px')}}>
+                {circles}
+            </svg>
+            <div style={{position:'absolute', right:'0', bottom:'0', width:(svgWidth + 'px'), height:(svgHeight + 'px')}}>
+                <ul style={{margin:'0', marginTop: '20px', listStyleType: 'none'}}>
+                    {names}
+                </ul>
+            </div>
+        </div>
+    }
+
 
     render(){
-
         return <div className="row" style={{margin: "0px"}}>
                 <div className="col-9" style={{margin: "0px", padding: "0px", display:'block', height: '100%'}}>
                     <WebGLCanvas
@@ -113,6 +127,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
                         onMouseUp = {this.onMouseUp.bind(this)}
                         viewUpdated = {this.viewUpdated.bind(this)}
                     />
+                    {this.legend()}
                 </div>
                 <div className="col-3">
                    { this.nodeInfo() }
