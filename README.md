@@ -1,6 +1,7 @@
 # cluster
 
 # Example output
+![Example](./example2.PNG "Example")
 ![Example](./example.png "Example")
 
 
