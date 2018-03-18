@@ -6,6 +6,7 @@ import { Vector3D, Vector2D } from 'simple-gl'
 
 export default class Cluster{
     nodes: Array<ClusterNode>
+    transformedPositions: Array<{node: ClusterNode, position: Vector3D}> = []
     links: Array<ClusterLink>
     types: Map<string, {color:{r:number, g:number, b:number, a:number}}>
     clusterGrid: ClusterGrid<ClusterNode>
@@ -50,12 +51,11 @@ export default class Cluster{
     }
 
     onMouseDown(location: Vector2D){
-        this.selectedNode = this.nodes.find((node: ClusterNode) => {
-                let pos = node.transformedPosition()
-                let pos2D = new Vector2D(pos.x, pos.y)
+        this.selectedNode = this.transformedPositions.find(({node, position}) => {
+                let pos2D = new Vector2D(position.x, position.y)
                 return pos2D.subtract(location).length() < 0.2
             }
-        )
+        ).node
     }
     onMouseUp(location: Vector2D){
         this.selectedNode = undefined
@@ -64,9 +64,8 @@ export default class Cluster{
     onMouseMove(location: Vector2D){
         this.lastMouseLocation = location
         if(!this.selectedNode){
-            this.nodes.forEach((node: ClusterNode) => {
-                let pos = node.transformedPosition()
-                let pos2D = new Vector2D(pos.x, pos.y)
+            this.transformedPositions.forEach(({node, position}) => {
+                let pos2D = new Vector2D(position.x, position.y)
                 if(node.highlight = pos2D.subtract(location).length() < 0.2){
                     this.highlightedNode = node
                 }
@@ -103,20 +102,21 @@ export default class Cluster{
     }
 
     update(time: number){
+        this.transformedPositions = this.nodes.map((node) => {return {node: node, position: node.transformedPosition()}})
         if(this.selectedNode){
             this.selectedNode.velocity = new Vector3D(0,0,0)
             this.selectedNode.transform._translation = new Vector3D(this.lastMouseLocation.x, this.lastMouseLocation.y, this.selectedNode.transform._translation.z)
         }
         if(!this.paused){
-            let positions = this.nodes.map((node: ClusterNode) => [node, node.transformedPosition()])
-            positions.forEach(([node, position]: [ClusterNode, Vector3D]) => this.clusterGrid.register(node, position))
-            positions.forEach(([nodeA, positionA]: [ClusterNode, Vector3D]) => {
+            let positions = this.transformedPositions
+            positions.forEach(({node, position}) => this.clusterGrid.register(node, position))
+            positions.forEach(({node, position}) => {
                 let force = new Vector3D(0,0,0)
-                let others = this.clusterGrid.nodesInCellsWith(nodeA)
+                let others = this.clusterGrid.nodesInCellsWith(node)
                 others.forEach((nodeB: ClusterNode) => {
                     let positionB = nodeB.transformedPosition()
-                    if(nodeB != nodeA){
-                        let diff = positionA.subtract(positionB)
+                    if(nodeB != node){
+                        let diff = position.subtract(positionB)
                         let distance = diff.length()
                         let direction = diff.direction(distance)
                         if(distance > 0.1){
@@ -125,7 +125,7 @@ export default class Cluster{
                         }
                     }
                 })
-                nodeA.velocity = nodeA.velocity.translate(force.scale(time))
+                node.velocity = node.velocity.translate(force.scale(time))
             })
 
             this.links.forEach((link: ClusterLink)=> {

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Component } from 'react'
 import WebGLCanvas from './webgl-canvas'
-import { GLScene, GLPolygon, Vector2D, GLObject, Matrix3, GLProgram } from 'simple-gl'
+import { GLScene, GLPolygon, Vector2D, Vector3D, GLObject, Matrix3, GLProgram } from 'simple-gl'
 import Cluster from '../cluster/cluster'
 import ClusterNode from '../cluster/cluster-node'
 
@@ -15,6 +15,7 @@ export interface ClusterGLProps{
 export default class ClusterGl extends Component<ClusterGLProps,{scale: number, selectedNode: ClusterNode}>{
 
     programs: Map<string, {vertexShaderSource: string, fragmentShaderSource: string, uniforms:Map<string, any>}>
+    screenNodes: Array<{node: ClusterNode, position: Vector2D}> = []
 
     componentWillMount(){
         this.setState({scale: 0.05})
@@ -30,8 +31,17 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         this.programs = programs
     }
 
-    viewUpdated(programs: Map<string, GLProgram>, view: Matrix3){
+    viewUpdated(programs: Map<string, GLProgram>, view: Matrix3, width: number, height: number){
         programs.get("main").updateUniform('projectionMatrix', view.matrix4Floats())
+        this.screenNodes = this.props.cluster.transformedPositions.map(({node, position}) => {
+            return {node: node, position: this.screenPositionFor(position, view, width, height)}
+        })
+    }
+
+    screenPositionFor(position: Vector3D, view: Matrix3, width: number, height: number): Vector2D{
+        let transformed = view.transform(new Vector2D(position.x, position.y))
+
+        return transformed.scaleV(new Vector2D(width/2, -height/2)).translate(new Vector2D(width/2, height/2))
     }
 
     scenes(): Map<string, GLScene>{
@@ -52,7 +62,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
             this.setState({selectedNode: this.props.cluster.highlightedNode})
         }
         else{
-           // this.setState({})
+           this.setState({})
         }
     }
 
@@ -112,6 +122,11 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         </div>
     }
 
+    text(){
+        return this.screenNodes.map(({node, position}) => {
+            return <p style={{position: 'absolute', top:(position.y-30), left:(position.x), fontSize:'10px', maxWidth:'15rem', maxHeight:'1.1rem', overflow:'hidden', textOverflow:'ellipsis'}}>{node.info.title}</p>
+        })
+    }
 
     render(){
         return <div className="row" style={{margin: "0px"}}>
@@ -128,6 +143,9 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
                         viewUpdated = {this.viewUpdated.bind(this)}
                     />
                     {this.legend()}
+                    <div style={{width:'100%', height:'100%', position:'absolute', top:'0', left:'0', bottom:'0', right:'0', pointerEvents:'none', overflow:'hidden'}}>
+                        {this.text()}
+                    </div>
                 </div>
                 <div className="col-3">
                    { this.nodeInfo() }

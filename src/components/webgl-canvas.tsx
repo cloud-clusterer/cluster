@@ -12,7 +12,7 @@ export interface WebGLCanvasProps {
     onMouseMove: (location: Vector2D) => void
     onMouseDown: (location: Vector2D) => void
     onMouseUp: (location: Vector2D) => void
-    viewUpdated: (programs: Map<string, GLProgram>, view: Matrix3) => void
+    viewUpdated: (programs: Map<string, GLProgram>, view: Matrix3, width:number, height:number) => void
 }
 
 class WebGLCanvas extends React.Component<WebGLCanvasProps> {
@@ -51,7 +51,7 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
         canvas.width = canvas.parentElement.clientWidth
         canvas.height = h-10
         this.aspectMatrix = Matrix3.scale(new Vector2D(this.props.scale, this.props.scale)).multiply(Matrix3.aspect(1.2, canvas.width, canvas.height))
-        this.props.viewUpdated(this.programs, this.aspectMatrix)
+        this.props.viewUpdated(this.programs, this.aspectMatrix, canvas.width, canvas.height)
         this.inverseView = this.aspectMatrix.inverse()
     }
 
