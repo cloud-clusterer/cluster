@@ -4,6 +4,7 @@ import WebGLCanvas from './webgl-canvas'
 import { GLScene, GLPolygon, Vector2D, Vector3D, GLObject, Matrix3, GLProgram } from 'simple-gl'
 import Cluster from '../cluster/cluster'
 import ClusterNode from '../cluster/cluster-node'
+import './cluster-gl-style.css'
 
 const vertexShaderSource = require('../shaders/vertex-shader.glsl');
 const fragmentShaderSource = require('../shaders/fragment-shader.glsl');
@@ -16,6 +17,8 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
 
     programs: Map<string, {vertexShaderSource: string, fragmentShaderSource: string, uniforms:Map<string, any>}>
     screenNodes: Array<{node: ClusterNode, position: Vector2D}> = []
+    typeFilters: Set<string> = new Set()
+    nameFilters: Set<string> = new Set()
 
     componentWillMount(){
         this.setState({scale: 0.05})
@@ -46,13 +49,15 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
 
     scenes(): Map<string, GLScene>{
         let scenes = new Map<string, GLScene>()
-        scenes.set("cluster", new GLScene([...this.props.cluster.links, ...this.props.cluster.nodes]))
+        let nodes = this.props.cluster.nodes.filter((node) => !node.disabled)
+        let links = this.props.cluster.links.filter((link) => !link.disabled)
+        scenes.set("cluster", new GLScene([...links, ...nodes]))
         return scenes
     }
 
     renderConfig(){
         return [
-            { scene:"cluster", program: "main", clear: true, clearColor: { r:0, g:0, b:0, a:0 } }
+            { scene:"cluster", program: "main", clear: true, clearColor: { r:248/255, g:248/255, b:250/255, a:1 } }
         ]
     }
 
@@ -76,6 +81,31 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
 
     onMouseMove(location: Vector2D){
         this.props.cluster.onMouseMove(location)
+    }
+
+    filterChanged(){
+        this.props.cluster.links.forEach((link)=>link.disabled = false)
+        this.props.cluster.nodes.forEach((node) =>{
+            node.disabled = this.typeFilters.has(node.info.type)
+            if(node.disabled){
+                this.props.cluster.links.forEach((link) => {
+                    if(link.nodeA == node || link.nodeB == node){
+                        link.disabled = true
+                    }
+                })
+            }
+        })
+        this.setState({})
+    }
+
+    typeFilterClicked(type: string){
+        if(this.typeFilters.has(type)){
+            this.typeFilters.delete(type)
+        }
+        else{
+            this.typeFilters.add(type)
+        }
+        this.filterChanged()
     }
 
     nodeInfo(): JSX.Element {
@@ -104,10 +134,12 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         let names: JSX.Element[] = []
         let currentPos = 0
         this.props.cluster.types.forEach((value, key) => {
+            let fill = `rgb(${Math.floor(value.color.r*255)}, ${Math.floor(value.color.g*255)}, ${Math.floor(value.color.b*255)})`
+            if(this.typeFilters.has(key)) fill = 'grey'
             circles.push(
-                <circle cx={svgWidth-30} cy={currentPos*30 + 30} r={10} fill={`rgb(${Math.floor(value.color.r*255)}, ${Math.floor(value.color.g*255)}, ${Math.floor(value.color.b*255)})`}/>
+                <circle cx={svgWidth-30} cy={currentPos*30 + 30} r={10} fill={fill}/>
             )
-            names.push(<li><p style={{marginBottom:'6px'}}>{key}</p></li>);
+            names.push(<li><p onClick={()=>this.typeFilterClicked(key)} className='legendItem' style={{marginBottom:'6px'}}>{key}</p></li>);
             currentPos ++
         })
         return<div>

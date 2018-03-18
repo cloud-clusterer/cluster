@@ -4,20 +4,22 @@ import Cluster from '../cluster/cluster'
 import ClusterNode from '../cluster/cluster-node'
 import ClusterLink from '../cluster/cluster-link'
 import { generate } from '../data-generator'
-import {cluster} from './dummy-data'
+import {cluster} from './my-data'
 import { Vector2D } from 'simple-gl'
 
 export default class App extends React.Component<{},{}> {
 
     cluster: Cluster
+    clusters: Array<Cluster>
     group = 0
 
     componentWillMount(){
-        this.cluster = Cluster.from(cluster[1], new Vector2D(-30,-30), 60, 60)
-        //window.onblur = () => this.cluster.pause()
+        this.clusters = cluster.map(c => Cluster.from(c, new Vector2D(-30,-30), 60, 60))
+        this.cluster = this.clusters[0]
+        window.onblur = () => this.cluster.pause()
         window.onfocus = () => {
             this.cluster.play()
-            this.cluster = Cluster.from(cluster[this.group++], new Vector2D(-30,-30), 60, 60)
+           // this.cluster =Cluster.from(cluster[0], new Vector2D(-30,-30), 60, 60)
             this.setState({})
         }
         cluster.map((nodeTree) => {

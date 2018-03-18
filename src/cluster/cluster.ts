@@ -102,7 +102,7 @@ export default class Cluster{
     }
 
     update(time: number){
-        this.transformedPositions = this.nodes.map((node) => {return {node: node, position: node.transformedPosition()}})
+        this.transformedPositions = this.nodes.filter((node)=>!node.disabled).map((node) => {return {node: node, position: node.transformedPosition()}})
         if(this.selectedNode){
             this.selectedNode.velocity = new Vector3D(0,0,0)
             this.selectedNode.transform._translation = new Vector3D(this.lastMouseLocation.x, this.lastMouseLocation.y, this.selectedNode.transform._translation.z)
@@ -128,7 +128,7 @@ export default class Cluster{
                 node.velocity = node.velocity.translate(force.scale(time))
             })
 
-            this.links.forEach((link: ClusterLink)=> {
+            this.links.filter((link)=>!link.disabled).forEach((link: ClusterLink)=> {
                 var difference = link.nodeB.transformedPosition().subtract(link.nodeA.transformedPosition());
                 var diffLength = difference.length();
                 var towardB = difference.direction(diffLength);
@@ -140,7 +140,7 @@ export default class Cluster{
                 link.nodeB.velocity = link.nodeB.velocity.translate(reverseForce);
             })
 
-            this.nodes.forEach((node: ClusterNode) => node.update(time))
+            this.nodes.filter((node)=>!node.disabled).forEach((node: ClusterNode) => node.update(time))
         }
     }
 
@@ -151,7 +151,7 @@ export default class Cluster{
     static from(cluster: any, topLeft: Vector2D, width: number, height: number): Cluster{
         let nodes = cluster.nodes.map((node: any) => ClusterNode.from(node)).filter(
             (node: ClusterNode) => {
-                return this.countRelationships(node.uuid, cluster.links) < 10
+                return this.countRelationships(node.uuid, cluster.links) < 30
             }
         )
         let links = cluster.links.filter(

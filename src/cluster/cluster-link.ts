@@ -5,6 +5,7 @@ export default class ClusterLink extends GLLine{
     nodeA: ClusterNode
     nodeB: ClusterNode
     direction: ClusterLinkDirection
+    disabled: Boolean = false
     constructor(nodeA: ClusterNode, nodeB: ClusterNode, direction: ClusterLinkDirection = ClusterLinkDirection.NONE){
         
         super(new Vertex(nodeA.position.translate(new Vector3D(0,0, 0)), [0,0,0,0.2]), new Vertex(nodeB.position.translate(new Vector3D(0,0,0)), [0,0,0,0.2]))

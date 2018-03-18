@@ -1,0 +1,4 @@
+.legendItem:hover{
+    color: rgb(11, 131, 230);
+    cursor: pointer;
+}
