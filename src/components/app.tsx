@@ -9,20 +9,17 @@ import { Vector2D } from 'simple-gl'
 
 export default class App extends React.Component<{},{}> {
 
-    cluster: Cluster
     clusters: Array<Cluster>
-    group = 0
-
+  
     componentWillMount(){
         this.clusters = cluster.map(c => Cluster.from(c, new Vector2D(-30,-30), 60, 60))
-        this.cluster = this.clusters[0]
-        window.onblur = () => this.cluster.pause()
-        window.onfocus = () => {
-            this.cluster.play()
-           // this.cluster =Cluster.from(cluster[0], new Vector2D(-30,-30), 60, 60)
-            this.setState({})
-        }
-        cluster.map((nodeTree) => {
+    //    window.onblur = () => this.cluster.pause()
+    //     window.onfocus = () => {
+    //         this.cluster.play()
+    //        // this.cluster =Cluster.from(cluster[0], new Vector2D(-30,-30), 60, 60)
+    //         this.setState({})
+    //     }
+       this.clusters = cluster.map((nodeTree) => {
             let nameSet = new Map<string, number>()
             nodeTree.nodes.forEach((node) => {
                 this.wordsFrom(node).forEach((word) => {
@@ -34,14 +31,13 @@ export default class App extends React.Component<{},{}> {
                 })
                 
             })
-            let max = {word: '', count:0}
-            nameSet.forEach((value, key) => {
-                if(value > max.count){
-                    max = {word: key, count: value}
-                }
-            })
-            return {nodeTree: nodeTree, name: max.word }
-        }).forEach((item) => console.log(item.name))
+            let wordsList = new Array<{word: string, count: number}>()
+            nameSet.forEach((value, key) => wordsList.push({word: key, count: value}))
+            let sortedWords = wordsList.sort((a, b) => b.count-a.count)
+            let cluster =  Cluster.from(nodeTree, new Vector2D(-30,-30), 60, 60)
+            cluster.name = `${sortedWords[0].word} ${sortedWords[1].word} ${sortedWords[2].word}`
+            return cluster
+        })
     }
 
     wordsFrom(node:any): Array<string>{
@@ -50,7 +46,6 @@ export default class App extends React.Component<{},{}> {
     }
     
     render(){
-
-        return <ClusterGl cluster={this.cluster}/>
+        return <ClusterGl clusters={this.clusters}/>
     }
 }

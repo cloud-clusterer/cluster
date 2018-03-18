@@ -2,3 +2,9 @@
     color: rgb(11, 131, 230);
     cursor: pointer;
 }
+
+.rowitem{
+    overflow-wrap: break-word;
+    padding: 10px 0;
+    border-bottom: 1px solid #e4e4e4;
+}

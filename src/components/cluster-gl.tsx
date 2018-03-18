@@ -10,7 +10,13 @@ const vertexShaderSource = require('../shaders/vertex-shader.glsl');
 const fragmentShaderSource = require('../shaders/fragment-shader.glsl');
 
 export interface ClusterGLProps{
-    cluster: Cluster
+    clusters: Array<Cluster>
+}
+
+function toList<T>(set: Set<T>): Array<T>{
+ let array = new Array<T>()
+    set.forEach(item=>array.push(item))
+ return array
 }
 
 export default class ClusterGl extends Component<ClusterGLProps,{scale: number, selectedNode: ClusterNode}>{
@@ -19,6 +25,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
     screenNodes: Array<{node: ClusterNode, position: Vector2D}> = []
     typeFilters: Set<string> = new Set()
     nameFilters: Set<string> = new Set()
+    activeCluster: Cluster
 
     componentWillMount(){
         this.setState({scale: 0.05})
@@ -32,11 +39,12 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
             uniforms: uniforms
         });
         this.programs = programs
+        this.activeCluster = this.props.clusters[0]
     }
 
     viewUpdated(programs: Map<string, GLProgram>, view: Matrix3, width: number, height: number){
         programs.get("main").updateUniform('projectionMatrix', view.matrix4Floats())
-        this.screenNodes = this.props.cluster.transformedPositions.map(({node, position}) => {
+        this.screenNodes = this.activeCluster.transformedPositions.map(({node, position}) => {
             return {node: node, position: this.screenPositionFor(position, view, width, height)}
         })
     }
@@ -49,8 +57,8 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
 
     scenes(): Map<string, GLScene>{
         let scenes = new Map<string, GLScene>()
-        let nodes = this.props.cluster.nodes.filter((node) => !node.disabled)
-        let links = this.props.cluster.links.filter((link) => !link.disabled)
+        let nodes = this.activeCluster.nodes.filter((node) => !node.disabled)
+        let links = this.activeCluster.links.filter((link) => !link.disabled)
         scenes.set("cluster", new GLScene([...links, ...nodes]))
         return scenes
     }
@@ -62,9 +70,9 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
     }
 
     update(time: number){
-        this.props.cluster.update(time)
-        if(this.props.cluster.highlightedNode && this.props.cluster.highlightedNode != this.state.selectedNode){
-            this.setState({selectedNode: this.props.cluster.highlightedNode})
+        this.activeCluster.update(time)
+        if(this.activeCluster.highlightedNode && this.activeCluster.highlightedNode != this.state.selectedNode){
+            this.setState({selectedNode: this.activeCluster.highlightedNode})
         }
         else{
            this.setState({})
@@ -72,23 +80,36 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
     }
 
     onMouseDown(location: Vector2D){
-        this.props.cluster.onMouseDown(location)
+        this.activeCluster.onMouseDown(location)
     }
 
     onMouseUp(location: Vector2D){
-        this.props.cluster.onMouseUp(location)
+        this.activeCluster.onMouseUp(location)
     }
 
     onMouseMove(location: Vector2D){
-        this.props.cluster.onMouseMove(location)
+        this.activeCluster.onMouseMove(location)
     }
 
     filterChanged(){
-        this.props.cluster.links.forEach((link)=>link.disabled = false)
-        this.props.cluster.nodes.forEach((node) =>{
-            node.disabled = this.typeFilters.has(node.info.type)
+        let disabled = (node: ClusterNode) => {
+            let filtered = this.typeFilters.has(node.info.type)
+            if(!filtered){
+                this.nameFilters.forEach(
+                    (filter) => {
+                        if(node.name.indexOf(filter) != -1){
+                            filtered = true
+                        }
+                    }
+                )
+            }
+            return filtered
+        }
+        this.activeCluster.links.forEach((link)=>link.disabled = false)
+        this.activeCluster.nodes.forEach((node) =>{
+            node.disabled = disabled(node)
             if(node.disabled){
-                this.props.cluster.links.forEach((link) => {
+                this.activeCluster.links.forEach((link) => {
                     if(link.nodeA == node || link.nodeB == node){
                         link.disabled = true
                     }
@@ -108,32 +129,76 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         this.filterChanged()
     }
 
-    nodeInfo(): JSX.Element {
+    groupNameClicked(){
+        let currentIndex = this.props.clusters.indexOf(this.activeCluster)
+        if(currentIndex >= this.props.clusters.length-1){
+            this.activeCluster = this.props.clusters[0]
+        }
+        else{
+            this.activeCluster = this.props.clusters[currentIndex+1]
+        }
+        this.setState({})
+    }
+
+    filterKeyDown(event: KeyboardEvent){
+        if(event.key == "Enter"){
+            this.nameFilters.add((event.target as HTMLInputElement).value);
+           (event.target as HTMLInputElement).value = ''
+           this.filterChanged()
+        }
+    }
+
+    nodeInfo(): JSX.Element{
         let node = this.state.selectedNode
         if(node){
             let otherProperties = Object.keys(node.info.otherProperties).map(
-                (key: string) => <div className="row"><div className="col-3">{`${key}:`}</div><div className="col-9">{`${node.info.otherProperties[key]}`}</div></div>
+                (key: string) => <div className="row rowitem"><div className="col-3">{`${key}:`}</div><div className="col-9">{`${node.info.otherProperties[key]}`}</div></div>
             )
             return <div>
-                <h2 style={{textAlign: 'center'}}>{node.info.title}</h2>
-                <div className="row" style={{overflowWrap: 'break-word'}}>
+                <h2 style={{textAlign: 'center', wordWrap: 'break-word', padding:'1em', borderBottom:'1px solid #e4e4e4'}}>{node.info.title}</h2>
+                <div className="row rowitem">
                     <div className="col-3">Name:</div><div className="col-9">{node.name}</div>
+                </div>
+                <div className="row rowitem">
                     <div className="col-3">Type:</div><div className="col-9">{node.info.type}</div>
                 </div>
-                <h4 style={{textAlign: 'center', marginTop: '0.5em'}}> Properties </h4>
+                { 
+                    Object.keys(node.info.otherProperties).length > 0 ?(
+                        <h4 style={{textAlign: 'center', marginTop: '0.5em'}}> Properties </h4>
+                    ) : <div/>
+                }
                 {otherProperties}
             </div>
         }
-        return <p></p>
+        return <div></div>
+    }
+
+    panel(): JSX.Element {
+        return <div>
+            <div onClick={this.groupNameClicked.bind(this)} style={{textAlign: 'center', cursor:'pointer'}}>{this.activeCluster.name}</div>
+            {this.nodeInfo()}
+            <div>
+                {this.nameFilters.size > 0?(
+                    <div>
+                        {toList(this.nameFilters).map((name)=>
+                            <p>{name}</p>
+                        )}
+                    </div>
+                ): <div/>}
+            </div>
+            <div style={{position:'absolute', bottom:'0px'}}>
+                <input onKeyDown={this.filterKeyDown.bind(this)} type="text"/>
+            </div>
+        </div>
     }
 
     legend(){
         let svgWidth = 300;
-        let svgHeight = 30*(this.props.cluster.types.size+1);
+        let svgHeight = 30*(this.activeCluster.types.size+1);
         let circles:JSX.Element[] = []
         let names: JSX.Element[] = []
         let currentPos = 0
-        this.props.cluster.types.forEach((value, key) => {
+        this.activeCluster.types.forEach((value, key) => {
             let fill = `rgb(${Math.floor(value.color.r*255)}, ${Math.floor(value.color.g*255)}, ${Math.floor(value.color.b*255)})`
             if(this.typeFilters.has(key)) fill = 'grey'
             circles.push(
@@ -180,7 +245,7 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
                     </div>
                 </div>
                 <div className="col-3">
-                   { this.nodeInfo() }
+                   { this.panel() }
                 </div>
         </div>
     }

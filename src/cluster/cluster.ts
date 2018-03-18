@@ -5,6 +5,7 @@ import { ClusterLinkDirection } from './cluster-link'
 import { Vector3D, Vector2D } from 'simple-gl'
 
 export default class Cluster{
+    name: string = ''
     nodes: Array<ClusterNode>
     transformedPositions: Array<{node: ClusterNode, position: Vector3D}> = []
     links: Array<ClusterLink>

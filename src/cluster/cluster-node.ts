@@ -8,8 +8,8 @@ export default class ClusterNode extends GLPolygon{
     highlight: Boolean = false
     disabled: Boolean = false
 
-    constructor(uuid: string, name: string, info: ClusterNodeInfo){
-        super(6,(0.2), new Vector3D(Math.random()*10-5,Math.random()*10-5,0))
+    constructor(uuid: string, name: string, info: ClusterNodeInfo, radius: number){
+        super(6,( radius), new Vector3D(Math.random()*10-5,Math.random()*10-5,0))
         this.setColor([Math.random(), Math.random(), Math.random(), 1])
         this.lineColor = [0,1,0,1]
         this.uuid = uuid
@@ -25,7 +25,7 @@ export default class ClusterNode extends GLPolygon{
     lines(): number[]{ return this.highlight?[1,2,3,4,5,6,7]:[] }
 
     static from(node: any): ClusterNode{
-        return new ClusterNode(node.uuid, node.name, ClusterNodeInfo.from(node.info))
+        return new ClusterNode(node.uuid, node.name, ClusterNodeInfo.from(node.info), node.info.size == 1?0.2: (node.info.size/2 + 0.2))
     }
 }
 
