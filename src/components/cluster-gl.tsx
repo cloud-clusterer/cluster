@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Component } from 'react'
 import WebGLCanvas from './webgl-canvas'
-import { GLScene, GLPolygon, Vector2D, Vector3D, GLObject, Matrix3, GLProgram } from 'simple-gl'
+import { GLScene, GLPolygon, Vector2D, Vector3D, GLObject, Matrix4, GLProgram, Transform3D } from 'simple-gl'
 import Cluster from '../cluster/cluster'
 import ClusterNode from '../cluster/cluster-node'
 import './cluster-gl-style.css'
@@ -13,13 +13,19 @@ export interface ClusterGLProps{
     clusters: Array<Cluster>
 }
 
+export interface ClusterGLState{
+    scale: number
+    selectedNode: ClusterNode
+    camera: Transform3D
+}
+
 function toList<T>(set: Set<T>): Array<T>{
  let array = new Array<T>()
     set.forEach(item=>array.push(item))
  return array
 }
 
-export default class ClusterGl extends Component<ClusterGLProps,{scale: number, selectedNode: ClusterNode}>{
+export default class ClusterGl extends Component<ClusterGLProps,ClusterGLState>{
 
     programs: Map<string, {vertexShaderSource: string, fragmentShaderSource: string, uniforms:Map<string, any>}>
     screenNodes: Array<{node: ClusterNode, position: Vector2D}> = []
@@ -28,7 +34,9 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
     activeCluster: Cluster
 
     componentWillMount(){
-        this.setState({scale: 0.05})
+        const camera = new Transform3D()
+        camera.scale(new Vector3D(0.05,0.05,1))
+        this.setState({camera: camera})
         let uniforms = new Map<string, any>()
         uniforms.set("projectionMatrix", {mapper:(gl:WebGLRenderingContext, position: WebGLUniformLocation, data: any)=> gl.uniformMatrix4fv(position, false, new Float32Array(data))})
         uniforms.set("cursor_location", {mapper: (gl:WebGLRenderingContext, position: WebGLUniformLocation, data: any)=>gl.uniform2fv(position, new Float32Array(data))})
@@ -42,17 +50,17 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
         this.activeCluster = this.props.clusters[0]
     }
 
-    viewUpdated(programs: Map<string, GLProgram>, view: Matrix3, width: number, height: number){
-        programs.get("main").updateUniform('projectionMatrix', view.matrix4Floats())
+    viewUpdated(programs: Map<string, GLProgram>, view: Matrix4, width: number, height: number){
+        programs.get("main").updateUniform('projectionMatrix', view.transpose().floats())
         this.screenNodes = this.activeCluster.transformedPositions.map(({node, position}) => {
             return {node: node, position: this.screenPositionFor(position, view, width, height)}
         })
     }
 
-    screenPositionFor(position: Vector3D, view: Matrix3, width: number, height: number): Vector2D{
-        let transformed = view.transform(new Vector2D(position.x, position.y))
+    screenPositionFor(position: Vector3D, view: Matrix4, width: number, height: number): Vector2D{
+        let transformed = view.transform(new Vector3D(position.x, position.y, 0))
 
-        return transformed.scaleV(new Vector2D(width/2, -height/2)).translate(new Vector2D(width/2, height/2))
+        return transformed.scaleV(new Vector3D(width/2, -height/2, 1)).translate(new Vector3D(width/2, height/2, 0))
     }
 
     scenes(): Map<string, GLScene>{
@@ -89,6 +97,11 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
 
     onMouseMove(location: Vector2D){
         this.activeCluster.onMouseMove(location)
+    }
+
+    onWheel(delta: Vector3D){
+        this.state.camera.translate(new Vector3D(0, delta.y*0.001,0))
+        //this.state.camera.scale(new Vector3D(1 + delta.y*0.001, 1 + delta.y*0.001, 1))
     }
 
     filterChanged(){
@@ -233,10 +246,11 @@ export default class ClusterGl extends Component<ClusterGLProps,{scale: number, 
                         scenes={this.scenes()}
                         renderConfig={this.renderConfig()}
                         update ={this.update.bind(this)}
-                        scale ={this.state.scale}
+                        camera ={this.state.camera}
                         onMouseMove = {this.onMouseMove.bind(this)}
                         onMouseDown = {this.onMouseDown.bind(this)}
                         onMouseUp = {this.onMouseUp.bind(this)}
+                        onWheel = {this.onWheel.bind(this)}
                         viewUpdated = {this.viewUpdated.bind(this)}
                     />
                     {this.legend()}
