@@ -8,9 +8,9 @@ export interface WebGLCanvasProps {
     renderConfig: Array<{scene: string, program: string, clear: Boolean, clearColor: {r: number, g: number, b: number, a: number}}>;
     camera: Transform3D
     update: (time: number) => void;
-    onMouseMove: (location: Vector2D) => void
-    onMouseDown: (location: Vector2D) => void
-    onMouseUp: (location: Vector2D) => void
+    onMouseMove: (location: Vector2D, event: MouseEvent) => void
+    onMouseDown: (location: Vector2D, event: MouseEvent) => void
+    onMouseUp: (location: Vector2D, event: MouseEvent) => void
     onWheel: (delta: Vector3D) => void
     viewUpdated: (programs: Map<string, GLProgram>, view: Matrix4, width:number, height:number) => void
 }
@@ -62,15 +62,15 @@ class WebGLCanvas extends React.Component<WebGLCanvasProps> {
     }
 
     onMouseDown(event: MouseEvent){
-        this.props.onMouseDown(this.mouseLocationFrom(event))
+        this.props.onMouseDown(this.mouseLocationFrom(event), event)
     }
 
     onMouseUp(event: MouseEvent){
-        this.props.onMouseUp(this.mouseLocationFrom(event))
+        this.props.onMouseUp(this.mouseLocationFrom(event), event)
     }
 
     onMouseMove(event: MouseEvent){
-        this.props.onMouseMove(this.mouseLocationFrom(event))
+        this.props.onMouseMove(this.mouseLocationFrom(event), event)
     }
 
     onWheel(event: WheelEvent){

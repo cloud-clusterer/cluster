@@ -32,6 +32,7 @@ export default class ClusterGl extends Component<ClusterGLProps,ClusterGLState>{
     typeFilters: Set<string> = new Set()
     nameFilters: Set<string> = new Set()
     activeCluster: Cluster
+    cursorState: {lastLocation: Vector2D, right: {down: boolean}, left: {down: boolean}} = {lastLocation: new Vector3D(0,0,0), right: {down: false}, left: {down:false}}
 
     componentWillMount(){
         const camera = new Transform3D()
@@ -59,7 +60,6 @@ export default class ClusterGl extends Component<ClusterGLProps,ClusterGLState>{
 
     screenPositionFor(position: Vector3D, view: Matrix4, width: number, height: number): Vector2D{
         let transformed = view.transform(new Vector3D(position.x, position.y, 0))
-
         return transformed.scaleV(new Vector3D(width/2, -height/2, 1)).translate(new Vector3D(width/2, height/2, 0))
     }
 
@@ -87,21 +87,42 @@ export default class ClusterGl extends Component<ClusterGLProps,ClusterGLState>{
         }
     }
 
-    onMouseDown(location: Vector2D){
-        this.activeCluster.onMouseDown(location)
+    onMouseDown(location: Vector2D, event: MouseEvent){
+        if(event.button == 0){
+            this.cursorState.left.down = this.activeCluster.nodes.find((node)=>node.highlight) == null
+            this.activeCluster.onMouseDown(location);
+        }
+        else if(event.button == 1){
+            this.cursorState.right.down = true
+        }
+        
     }
 
-    onMouseUp(location: Vector2D){
+    onMouseUp(location: Vector2D, event: MouseEvent){
+        if(event.button == 0){
+            this.cursorState.left.down = false
+        }
+        else if(event.button == 1){
+            this.cursorState.right.down = false
+        }
         this.activeCluster.onMouseUp(location)
     }
 
-    onMouseMove(location: Vector2D){
+    onMouseMove(location: Vector2D, event: MouseEvent){
+        if(this.cursorState.left.down){
+            const diff = this.cursorState.lastLocation
+            .subtract(new Vector3D(event.clientX, event.clientY, 0))
+            .scaleV(new Vector3D(1-this.state.camera._scale.x, 1-this.state.camera._scale.y, 1))
+            .scale(0.05)
+            this.state.camera.translate(new Vector3D(-diff.x, diff.y, 0))
+        }
+        
+        this.cursorState.lastLocation = new Vector3D(event.clientX, event.clientY, 0)
         this.activeCluster.onMouseMove(location)
     }
 
     onWheel(delta: Vector3D){
-        this.state.camera.translate(new Vector3D(0, delta.y*0.001,0))
-        //this.state.camera.scale(new Vector3D(1 + delta.y*0.001, 1 + delta.y*0.001, 1))
+        this.state.camera.scale(new Vector3D(1 - delta.y*0.001, 1 - delta.y*0.001, 1))
     }
 
     filterChanged(){
@@ -233,8 +254,13 @@ export default class ClusterGl extends Component<ClusterGLProps,ClusterGLState>{
     }
 
     text(){
+        const scaling= this.state.camera._scale.y/0.05
+        const fontSize = 10*scaling
+        const top = 30*scaling
+        const maxHeight = 15*scaling
+        const maxWidth = 100*scaling
         return this.screenNodes.map(({node, position}) => {
-            return <p style={{position: 'absolute', top:(position.y-30), left:(position.x), fontSize:'10px', maxWidth:'15rem', maxHeight:'1.1rem', overflow:'hidden', textOverflow:'ellipsis'}}>{node.info.title}</p>
+            return <p style={{position: 'absolute', top:(position.y-top), left:(position.x), fontSize: fontSize +'px', maxWidth:maxWidth +'px', maxHeight:maxHeight+'px',wordBreak:'break-all' , overflow:'hidden', textOverflow:'ellipsis'}}>{node.info.title}</p>
         })
     }
 

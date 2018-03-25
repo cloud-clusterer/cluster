@@ -4,7 +4,7 @@ import Cluster from '../cluster/cluster'
 import ClusterNode from '../cluster/cluster-node'
 import ClusterLink from '../cluster/cluster-link'
 import { generate } from '../data-generator'
-import {cluster} from './my-data'
+import {cluster} from './dummy-data'
 import { Vector2D } from 'simple-gl'
 
 export default class App extends React.Component<{},{}> {

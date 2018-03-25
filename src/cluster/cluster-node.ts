@@ -5,8 +5,8 @@ export default class ClusterNode extends GLPolygon{
     name: string
     info: ClusterNodeInfo
     velocity: Vector3D = new Vector3D(0,0,0)
-    highlight: Boolean = false
-    disabled: Boolean = false
+    highlight: boolean = false
+    disabled: boolean = false
 
     constructor(uuid: string, name: string, info: ClusterNodeInfo, radius: number){
         super(6,( radius), new Vector3D(Math.random()*10-5,Math.random()*10-5,0))
